@@ -1,1 +1,1 @@
-# aws-infra-zerotouch
+# aws-zero-touch-infra
