@@ -1,46 +1,81 @@
+# =============================================================================
+# PRODUCTION EKS - VARIABLES
+# =============================================================================
+
 variable "aws_region" {
   description = "AWS region"
   type        = string
   default     = "us-west-2"
 }
 
-variable "cluster_name" {}
-variable "vpc_id" {}
-variable "subnet_ids" {
-  type = list(string)
+variable "environment" {
+  description = "Environment name"
+  type        = string
+  default     = "prod"
 }
-variable "node_group_name" {}
-variable "instance_type" {}
-variable "desired_capacity" {
-  type = number
+
+variable "cluster_name" {
+  description = "EKS Cluster name"
+  type        = string
+  default     = "prod-eks"
 }
-variable "min_capacity" {
-  type    = number
-  default = 2
-}
-variable "max_capacity" {
-  type    = number
-  default = 10
-}
-variable "eks_role_arn" {}
-variable "node_role_arn" {}
+
 variable "cluster_version" {
-  type    = string
-  default = "1.32"
+  description = "Kubernetes version"
+  type        = string
+  default     = "1.30"
 }
+
+variable "node_group_name" {
+  description = "EKS Node Group name"
+  type        = string
+  default     = "prod-node-group"
+}
+
+variable "instance_type" {
+  description = "EC2 instance type for worker nodes"
+  type        = string
+  default     = "t3.medium"
+}
+
+variable "desired_capacity" {
+  description = "Desired number of worker nodes"
+  type        = number
+  default     = 2
+}
+
+variable "min_capacity" {
+  description = "Minimum number of worker nodes"
+  type        = number
+  default     = 1
+}
+
+variable "max_capacity" {
+  description = "Maximum number of worker nodes"
+  type        = number
+  default     = 4
+}
+
+variable "user_instance_type" {
+  description = "Instance type for user workloads"
+  type        = string
+  default     = "t3.small"
+}
+
+variable "app_instance_type" {
+  description = "Instance type for app workloads"
+  type        = string
+  default     = "t3.medium"
+}
+
 variable "tags" {
-  type = map(string)
+  description = "Tags applied to all EKS resources"
+  type        = map(string)
   default = {
     Environment = "prod"
     Project     = "zero-touch"
-    Region      = "us-west-2"
+    ManagedBy   = "terraform"
+    Compliance  = "SOX"
+    Owner       = "production-team"
   }
-}
-variable "user_instance_type" {
-  type    = string
-  default = "t3.large"
-}
-variable "app_instance_type" {
-  type    = string
-  default = "t3.large"
 }

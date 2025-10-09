@@ -4,29 +4,44 @@
 aws_region  = "us-east-1"
 environment = "dev"
 
-# VPC Configuration - CHANGE THIS TO YOUR ACTUAL DEV VPC ID
-vpc_id = "vpc-0f13f9687b72a6e03"  # Replace with your VPC ID
-
+# -----------------------------------------------------------------------------
 # Web Access Configuration
+# -----------------------------------------------------------------------------
+# Allow HTTP/HTTPS access from anywhere (safe for dev only)
 web_ingress_cidrs = ["0.0.0.0/0"]
 
-# SSH Access Configuration - MORE PERMISSIVE IN DEV
-ssh_ingress_cidrs = [
-  "0.0.0.0/0"
-]
+# -----------------------------------------------------------------------------
+# SSH Access Configuration
+# -----------------------------------------------------------------------------
+# Allow SSH from anywhere (more permissive for dev testing)
+# In production, restrict this to office or bastion IPs.
+ssh_ingress_cidrs = ["0.0.0.0/0"]
 
+# -----------------------------------------------------------------------------
 # Database Access Configuration
-database_ingress_cidrs = [
-  "10.0.0.0/16"  # Change to your dev VPC CIDR
-]
+# -----------------------------------------------------------------------------
+# Allow DB access only from within the VPC (safe for dev)
+database_ingress_cidrs = ["10.0.0.0/16"]
 
-# Database access from specific security groups
+# No specific source SGs defined (optional)
 database_source_sgs = []
 
-# EKS Configuration
+# -----------------------------------------------------------------------------
+# EKS Configuration (optional)
+# -----------------------------------------------------------------------------
 eks_control_plane_sgs = []
 
-# Development Tags - FIXED VERSION
+# -----------------------------------------------------------------------------
+# Optional Security Groups
+# -----------------------------------------------------------------------------
+create_bastion_sg = true
+create_app_sg     = true
+bastion_allowed_cidrs = ["0.0.0.0/0"]
+app_ports             = [8080, 3000, 8000]
+
+# -----------------------------------------------------------------------------
+# Development Tags
+# -----------------------------------------------------------------------------
 tags = {
   Environment   = "dev"
   Project       = "zero-touch"
@@ -34,10 +49,9 @@ tags = {
   Service       = "security-groups"
   CostCenter    = "Development"
   Owner         = "DevOps-Team"
-  AutoShutdown  = "Enabled"      # ← FIXED: Added missing value
+  AutoShutdown  = "Enabled"
   Backup        = "NotRequired"
   Monitoring    = "Basic"
   Purpose       = "Testing"
   CreatedBy     = "Terraform"
-} 
- # ← FIXED: Added missing closing bracket
+}

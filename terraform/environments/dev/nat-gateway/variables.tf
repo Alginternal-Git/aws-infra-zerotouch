@@ -1,37 +1,24 @@
 # =============================================================================
-# DEVELOPMENT NAT GATEWAY - VARIABLES (COMPLETE)
+# DEVELOPMENT NAT GATEWAY - VARIABLES (FINAL)
 # =============================================================================
 
 variable "aws_region" {
-  description = "AWS region"
+  description = "AWS region for deployment"
   type        = string
-  default     = "us-east-1"
 }
 
 variable "environment" {
-  description = "Environment name"
-  type        = string
-  default     = "dev"
-}
-
-variable "vpc_id" {
-  description = "VPC ID where NAT Gateway will be created"
+  description = "Deployment environment (dev, stage, prod)"
   type        = string
 }
 
-# ADD THIS MISSING VARIABLE
 variable "single_nat_gateway" {
-  description = "Use single NAT Gateway for cost savings in development"
+  description = "Whether to use a single NAT Gateway for cost savings"
   type        = bool
   default     = true
 }
 
 variable "tags" {
-  description = "Tags to apply to resources"
+  description = "Tags to apply to all resources"
   type        = map(string)
-  default = {
-    Environment = "dev"
-    Project     = "zero-touch"
-    ManagedBy   = "terraform"
-  }
 }

@@ -16,7 +16,7 @@ output "dev_nat_summary" {
   description = "Development NAT Gateway summary"
   value = {
     environment = "dev"
-    vpc_id      = var.vpc_id
+    vpc_id      = data.aws_vpc.selected.id
     region      = var.aws_region
     nat_count   = length(module.nat_gateway.nat_gateway_ids)
     public_ips  = module.nat_gateway.nat_gateway_public_ips

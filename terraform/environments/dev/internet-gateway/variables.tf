@@ -1,21 +1,15 @@
 variable "aws_region" {
-  description = "AWS region"
+  description = "AWS region for Internet Gateway"
   type        = string
-  default     = "us-east-1"
 }
 
 variable "environment" {
-  description = "Environment name"
-  type        = string
-}
-
-variable "vpc_id" {
-  description = "VPC ID"
+  description = "Environment name (dev, prod, etc.)"
   type        = string
 }
 
 variable "tags" {
-  description = "Resource tags"
+  description = "Common tags for all resources"
   type        = map(string)
-  default     = {}
 }
+

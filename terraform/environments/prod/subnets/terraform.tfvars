@@ -1,8 +1,14 @@
-aws_region            = "us-west-2"
-environment           = "prod"
-vpc_id               = "vpc-094620e7f146a180b"  # Your prod VPC ID
+# =============================================================================
+# TERRAFORM VARIABLES - SUBNETS MODULE (PRODUCTION ENVIRONMENT)
+# =============================================================================
+
+aws_region  = "us-west-2"
+environment = "prod"
+
+# -----------------------------------------------------------------------------
+# Subnet Configuration
+# -----------------------------------------------------------------------------
 create_public_subnets = true
-internet_gateway_id   = "igw-00bcab006ae80c4f4"  # Your prod IGW ID
 
 public_subnets = {
   "subnet-2a" = {
@@ -34,6 +40,9 @@ private_subnets = {
   }
 }
 
+# -----------------------------------------------------------------------------
+# Tags for Cost Tracking & Management
+# -----------------------------------------------------------------------------
 tags = {
   Environment = "prod"
   Project     = "zero-touch"

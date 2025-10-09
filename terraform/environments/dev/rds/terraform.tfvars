@@ -7,14 +7,14 @@ aws_region = "us-east-1"
 environment = "dev"
 
 # Network Configuration - YOUR REAL VALUES
-vpc_id = "vpc-0f13f9687b72a6e03"  # Your vpc  id
-database_security_group_id = "sg-0a7a3580eee69ea18"  # Your dev database SG
+#vpc_id = "vpc3"  # Your vpc  id
+#database_security_group_id = "sg0a18"  # Your dev database SG
 
 # REAL Private Subnet IDs (replace with actual from AWS console)
-subnet_ids = [
-  "subnet-017fd88c4984940a4",  # dev-private-subnet-1a (us-east-1a)  
-  "subnet-0685b4d96ea6334d7"   # dev-private-subnet-1b (us-east-1b)
-]
+#ubnet_ids = [
+ # "subnet-014",  # dev-private-subnet-1a (us-east-1a)  
+  #"subnet-06857"   # dev-private-subnet-1b (us-east-1b)
+#]
 
 # Database Configuration
 db_name     = "devapp"

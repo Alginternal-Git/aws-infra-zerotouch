@@ -13,22 +13,6 @@ variable "environment" {
   type        = string
   default     = "prod"
 }
-
-variable "vpc_id" {
-  description = "Production VPC ID where RDS will be created"
-  type        = string
-}
-
-variable "database_security_group_id" {
-  description = "Production database security group ID"
-  type        = string
-}
-
-variable "subnet_ids" {
-  description = "List of production subnet IDs for RDS"
-  type        = list(string)
-}
-
 variable "db_name" {
   description = "Production database name"
   type        = string

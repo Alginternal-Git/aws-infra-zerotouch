@@ -1,8 +1,14 @@
-aws_region            = "us-east-1"
-environment           = "dev"
-vpc_id               = "vpc-0f13f9687b72a6e03"
+# =============================================================================
+# TERRAFORM VARIABLES - SUBNETS MODULE (DEV ENVIRONMENT)
+# =============================================================================
+
+aws_region  = "us-east-1"
+environment = "dev"
+
+# -----------------------------------------------------------------------------
+# Subnet Configuration
+# -----------------------------------------------------------------------------
 create_public_subnets = true
-internet_gateway_id   = "igw-0ae5b0791bc53a40d"
 
 public_subnets = {
   "subnet-1a" = {
@@ -26,6 +32,9 @@ private_subnets = {
   }
 }
 
+# -----------------------------------------------------------------------------
+# Tags for cost tracking and identification
+# -----------------------------------------------------------------------------
 tags = {
   Environment = "dev"
   Project     = "aws-zero-touch"

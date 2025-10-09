@@ -2,56 +2,48 @@
 # PRODUCTION NAT GATEWAY - OUTPUTS (ENTERPRISE GRADE)
 # =============================================================================
 
+# NAT Gateway IDs
 output "nat_gateway_ids" {
-  description = "Production NAT Gateway IDs"
+  description = "List of NAT Gateway IDs created in production"
   value       = module.nat_gateway.nat_gateway_ids
 }
 
+# NAT Gateway Public IPs
 output "nat_gateway_public_ips" {
-  description = "Production NAT Gateway public IPs"
+  description = "List of Elastic IPs associated with NAT Gateways"
   value       = module.nat_gateway.nat_gateway_public_ips
 }
 
-output "elastic_ip_ids" {
-  description = "Production Elastic IP IDs"
-  value       = module.nat_gateway.elastic_ip_ids
-}
+# Private Route Table IDs
+#output "private_route_table_ids" {
+  #description = "IDs of private route tables associated with NAT Gateways"
+ #value       = module.nat_gateway.private_route_table_ids
+#}
 
-output "private_route_table_ids" {
-  description = "Production private route table IDs"
-  value       = module.nat_gateway.private_route_table_ids
-}
-
+# NAT Gateway Summary
 output "prod_nat_summary" {
-  description = "Comprehensive production NAT Gateway summary"
+  description = "Comprehensive summary of production NAT Gateways"
   value = {
-    environment          = "prod"
-    vpc_id              = var.vpc_id
+    environment         = var.environment
+    vpc_id              = data.aws_vpc.selected.id
+    igw_id              = data.aws_internet_gateway.selected.id
     region              = var.aws_region
     nat_count           = length(module.nat_gateway.nat_gateway_ids)
     public_ips          = module.nat_gateway.nat_gateway_public_ips
-    high_availability   = !var.single_nat_gateway
-    cost_model          = var.single_nat_gateway ? "single-nat" : "multi-az-enterprise"
+    high_availability   = true
     compliance_level    = "SOX"
-    support_tier        = "24x7"
-    availability_zones  = length(module.nat_gateway.nat_gateway_ids)
+    cost_model          = "multi-az-enterprise"
+    redundancy_level    = "zone-level"
   }
 }
 
-# Detailed NAT Gateway information for monitoring and operations
-output "nat_gateway_details" {
-  description = "Detailed NAT Gateway information for production monitoring"
-  value       = module.nat_gateway.nat_gateway_details
-}
-
-# Production connectivity information
-output "production_connectivity" {
-  description = "Production connectivity summary for documentation"
+# Production Connectivity Overview
+output "prod_connectivity_overview" {
+  description = "Network connectivity and redundancy overview for production environment"
   value = {
     outbound_internet_access = "enabled"
-    high_availability       = "multi-az"
-    redundancy_level        = "zone-level"
-    estimated_monthly_cost  = "135-180-USD"  # 3 NAT Gateways * $45-60 each
-    data_transfer_pricing   = "per-gb-processed"
+    high_availability        = "multi-az"
+    redundancy_level         = "zone-level"
+    estimated_monthly_cost   = "135–180 USD (approx)"
   }
 }

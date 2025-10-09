@@ -1,125 +1,50 @@
 # =============================================================================
-# RDS MODULE - VARIABLES
+# RDS MODULE VARIABLES
 # =============================================================================
 
-variable "environment" {
-  description = "Environment name (dev, prod)"
-  type        = string
-}
-
-variable "db_name" {
-  description = "Database name"
-  type        = string
-}
-
-variable "engine" {
-  description = "Database engine"
-  type        = string
-  default     = "mysql"
-}
-
-variable "engine_version" {
-  description = "Database engine version"
-  type        = string
-  default     = "8.0"
-}
-
-variable "instance_class" {
-  description = "RDS instance class"
-  type        = string
-  default     = "db.t3.micro"
-}
-
-variable "allocated_storage" {
-  description = "Initial storage size in GB"
-  type        = number
-  default     = 20
-}
-
-variable "max_allocated_storage" {
-  description = "Maximum storage size for autoscaling"
-  type        = number
-  default     = 100
-}
-
-variable "storage_type" {
-  description = "Storage type"
-  type        = string
-  default     = "gp2"
-}
-
-variable "storage_encrypted" {
-  description = "Enable storage encryption"
-  type        = bool
-  default     = true
-}
-
-variable "username" {
-  description = "Database master username"
-  type        = string
-  default     = "admin"
-}
-
+variable "environment" { type = string }
+variable "db_name" { type = string }
+variable "engine" { type = string }
+variable "engine_version" { type = string }
+variable "instance_class" { type = string }
+variable "parameter_group_family" { type = string }
+variable "allocated_storage" { type = number }
+variable "max_allocated_storage" { type = number }
+variable "storage_encrypted" { type = bool }
+variable "username" { type = string }
 variable "password" {
-  description = "Database master password"
+  description = "Master password for the RDS instance"
   type        = string
   sensitive   = true
 }
+variable "vpc_id" { type = string }
+variable "subnet_ids" { type = list(string) }
+variable "security_group_ids" { type = list(string) }
 
-variable "subnet_ids" {
-  description = "List of subnet IDs for DB subnet group"
-  type        = list(string)
-}
+variable "backup_retention_period" { type = number }
+variable "backup_window" { type = string }
+variable "maintenance_window" { type = string }
 
-variable "security_group_ids" {
-  description = "List of security group IDs"
-  type        = list(string)
-}
-
-variable "backup_retention_period" {
-  description = "Backup retention period in days"
-  type        = number
-  default     = 7
-}
-
-variable "backup_window" {
-  description = "Backup window"
-  type        = string
-  default     = "03:00-04:00"
-}
-
-variable "maintenance_window" {
-  description = "Maintenance window"
-  type        = string
-  default     = "sun:04:00-sun:05:00"
-}
-
-variable "multi_az" {
-  description = "Enable Multi-AZ deployment"
-  type        = bool
-  default     = false
-}
-
+variable "multi_az" { type = bool }
+variable "skip_final_snapshot" { type = bool }
 variable "publicly_accessible" {
-  description = "Make database publicly accessible"
+  description = "Whether the RDS instance is publicly accessible"
   type        = bool
   default     = false
 }
 
-variable "skip_final_snapshot" {
-  description = "Skip final snapshot when deleting"
-  type        = bool
-  default     = false
-}
+variable "deletion_protection" { type = bool }
 
-variable "parameter_group_family" {
-  description = "DB parameter group family"
+variable "tags" { type = map(string) }
+
+variable "storage_type" {
+  description = "Type of RDS storage (e.g., gp2, gp3, io1)"
   type        = string
-  default     = "mysql8.0"
+  default     = "gp3"
 }
 
-variable "tags" {
-  description = "Tags to apply to resources"
-  type        = map(string)
-  default     = {}
+variable "kms_key_id" {
+  description = "ARN of KMS key for encryption"
+  type        = string
+  default     = null
 }

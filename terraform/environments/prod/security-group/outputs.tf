@@ -58,7 +58,7 @@ output "prod_security_summary" {
   value = {
     environment = "prod"
     region     = var.aws_region
-    vpc_id     = var.vpc_id
+    vpc_id     = data.aws_vpc.selected.id
     web_sg     = module.security_groups.web_security_group_id
     db_sg      = module.security_groups.database_security_group_id
     eks_sg     = module.security_groups.eks_nodes_security_group_id

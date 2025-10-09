@@ -4,10 +4,10 @@ provider "aws" {
 
 # S3 Bucket for Terraform State
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "aws-zero-touch-terraform-states-dev"
+  bucket = "aws-zero-touch-terraform-states-"
   
   tags = {
-    Name        = "Terraform State Store-dev"
+    Name        = "Terraform State Store"
     Environment = "shared"
     Project     = "aws-zero-touch"
   }
@@ -44,7 +44,7 @@ resource "aws_s3_bucket_public_access_block" "terraform_state" {
 
 # DynamoDB table for state locking
 resource "aws_dynamodb_table" "terraform_locks" {
-  name           = "terraform-locks-dev"
+  name           = "terraform-locks"
   billing_mode   = "PAY_PER_REQUEST"
   hash_key       = "LockID"
   
@@ -54,7 +54,7 @@ resource "aws_dynamodb_table" "terraform_locks" {
   }
   
   tags = {
-    Name        = "Terraform State Locks-dev"
+    Name        = "Terraform State Locks"
     Environment = "shared"
     Project     = "aws-zero-touch"
   }

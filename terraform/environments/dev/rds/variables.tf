@@ -1,5 +1,5 @@
 # =============================================================================
-# DEVELOPMENT RDS - VARIABLES
+# DEVELOPMENT RDS VARIABLES
 # =============================================================================
 
 variable "aws_region" {
@@ -12,21 +12,6 @@ variable "environment" {
   description = "Environment name"
   type        = string
   default     = "dev"
-}
-
-variable "vpc_id" {
-  description = "VPC ID where RDS will be created"
-  type        = string
-}
-
-variable "database_security_group_id" {
-  description = "Security group ID for database access"
-  type        = string
-}
-
-variable "subnet_ids" {
-  description = "List of subnet IDs for RDS"
-  type        = list(string)
 }
 
 variable "db_name" {
@@ -42,7 +27,7 @@ variable "engine" {
 }
 
 variable "engine_version" {
-  description = "Database engine version"
+  description = "Engine version"
   type        = string
   default     = "8.0"
 }
@@ -60,37 +45,37 @@ variable "parameter_group_family" {
 }
 
 variable "allocated_storage" {
-  description = "Initial storage size in GB"
+  description = "Initial storage (GB)"
   type        = number
   default     = 20
 }
 
 variable "max_allocated_storage" {
-  description = "Maximum storage size for autoscaling"
+  description = "Max storage (GB)"
   type        = number
   default     = 50
 }
 
 variable "storage_encrypted" {
-  description = "Enable storage encryption"
+  description = "Enable encryption"
   type        = bool
   default     = true
 }
 
 variable "username" {
-  description = "Database master username"
+  description = "DB master username"
   type        = string
   default     = "admin"
 }
 
 variable "password" {
-  description = "Database master password"
+  description = "DB master password"
   type        = string
   sensitive   = true
 }
 
 variable "backup_retention_period" {
-  description = "Backup retention period in days"
+  description = "Backup retention (days)"
   type        = number
   default     = 7
 }
@@ -108,7 +93,7 @@ variable "maintenance_window" {
 }
 
 variable "tags" {
-  description = "Tags to apply to resources"
+  description = "Tags for resources"
   type        = map(string)
   default = {
     Environment = "dev"

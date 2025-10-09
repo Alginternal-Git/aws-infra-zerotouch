@@ -9,11 +9,6 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC ID"
-  type        = string
-}
-
 variable "tags" {
   description = "Resource tags"
   type        = map(string)

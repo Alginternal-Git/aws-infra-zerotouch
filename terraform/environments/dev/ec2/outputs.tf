@@ -1,27 +1,44 @@
-output "bastion_public_ip" {
-  description = "Bastion public IP"
-  value       = module.ec2.bastion_public_ip
+# =============================================================================
+# DEVELOPMENT EC2 OUTPUTS
+# =============================================================================
+# Provides summary of EC2 instances created in the dev environment
+# including Bastion Host and Application Server details.
+# =============================================================================
+
+# Bastion Instance Details
+output "dev_bastion_instance_id" {
+  description = "The ID of the development Bastion EC2 instance"
+  value       = try(module.ec2.bastion_instance_id, null)
 }
 
-output "ssh_bastion" {
-  description = "SSH command for bastion"
-  value       = module.ec2.bastion_public_ip != null ? "ssh -i ../../../key-pair/keys/dev/dev-dev-keypair.pem ec2-user@${module.ec2.bastion_public_ip}" : null
+output "dev_bastion_public_ip" {
+  description = "The public Elastic IP of the Bastion host (for SSH access)"
+  value       = try(module.ec2.bastion_public_ip, null)
 }
 
-output "app_server_ips" {
-  description = "App server private IPs"
-  value       = module.ec2.app_server_private_ips
+# Application Servers Details
+output "dev_app_server_ids" {
+  description = "The IDs of the development application servers"
+  value       = try(module.ec2.app_server_ids, [])
 }
 
-output "app_server_details" {
-  description = "App server details"
-  value       = module.ec2.app_server_details
+output "dev_app_private_ips" {
+  description = "The private IP addresses of development application servers"
+  value       = try(module.ec2.app_private_ips, [])
 }
 
-output "ssh_commands_via_bastion" {
-  description = "SSH commands to app servers via bastion"
-  value = [
-    for ip in module.ec2.app_server_private_ips :
-    "ssh -i ../../../key-pair/keys/dev/dev-dev-keypair.pem -o ProxyCommand='ssh -i ../../../key-pair/keys/dev/dev-dev-keypair.pem -W %h:%p ec2-user@${module.ec2.bastion_public_ip}' ec2-user@${ip}"
-  ]
+# Environment Summary
+output "dev_ec2_summary" {
+  description = "Summary of EC2 instances and networking for development environment"
+  value = {
+    environment       = var.environment
+    region            = var.aws_region
+    vpc_id            = data.aws_vpc.selected.id
+    bastion_instance  = try(module.ec2.bastion_instance_id, "not created")
+    bastion_public_ip = try(module.ec2.bastion_public_ip, "not assigned")
+    app_count         = length(try(module.ec2.app_server_ids, []))
+    app_private_ips   = try(module.ec2.app_private_ips, [])
+    key_name          = var.key_name
+    status            = "Development Environment Deployed Successfully"
+  }
 }

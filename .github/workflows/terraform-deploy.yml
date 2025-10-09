@@ -1,0 +1,138 @@
+name: Terraform Zero-Touch Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Select environment"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+
+      service:
+        description: "Select service to deploy"
+        required: true
+        type: choice
+        options:
+          - vpc
+          - subnets
+          - internet-gateway
+          - nat-gateway
+          - security-groups
+          - keypair
+          - ec2
+          - rds
+          - ecr
+          - eks
+          - s3
+
+      action:
+        description: "Choose Terraform action"
+        required: true
+        type: choice
+        options:
+          - plan
+          - apply
+          - destroy
+
+jobs:
+  terraform:
+    name: Deploy ${{ github.event.inputs.service }} on ${{ github.event.inputs.environment }}
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      # 🔹 Intelligent Dependency Check
+      - name: Check Service Dependency
+        id: dependency
+        run: |
+          service="${{ github.event.inputs.service }}"
+          env="${{ github.event.inputs.environment }}"
+          echo "Checking dependencies for $service in $env environment..."
+
+          case "$service" in
+            subnets)
+              deps=("vpc")
+              ;;
+            internet-gateway)
+              deps=("vpc")
+              ;;
+            nat-gateway)
+              deps=("vpc" "subnets" "internet-gateway")
+              ;;
+            security-groups)
+              deps=("vpc")
+              ;;
+            ec2)
+              deps=("vpc" "subnets" "security-groups" "keypair" "nat-gateway")
+              ;;
+            rds)
+              deps=("vpc" "subnets" "security-groups" "nat-gateway")
+              ;;
+            eks)
+              deps=("vpc" "subnets" "security-groups" "ecr")
+              ;;
+            s3)
+              deps=()
+              ;;
+            ecr)
+              deps=()
+              ;;
+            keypair)
+              deps=()
+              ;;
+            *)
+              deps=()
+              ;;
+          esac
+
+          for d in "${deps[@]}"; do
+            echo "✅ Required dependency: $d (ensure it's deployed)"
+          done
+
+      - name: Terraform Init
+        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
+        run: terraform init -reconfigure
+
+      - name: Terraform Validate
+        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
+        run: terraform validate
+
+      - name: Terraform Plan
+        if: ${{ github.event.inputs.action == 'plan' }}
+        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
+        run: terraform plan
+
+      - name: Manual Approval
+        if: ${{ github.event.inputs.action == 'apply' }}
+        uses: trstringer/manual-approval@v1
+        with:
+          approvers: "your-github-username"
+          minimum-approvals: 1
+          timeout-minutes: 30
+          issue-title: "Approve Apply for ${{ github.event.inputs.service }} in ${{ github.event.inputs.environment }}"
+          issue-body: "Please approve the apply step."
+
+      - name: Terraform Apply
+        if: ${{ github.event.inputs.action == 'apply' }}
+        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
+        run: terraform apply -auto-approve
+
+      - name: Terraform Destroy
+        if: ${{ github.event.inputs.action == 'destroy' }}
+        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
+        run: terraform destroy -auto-approve

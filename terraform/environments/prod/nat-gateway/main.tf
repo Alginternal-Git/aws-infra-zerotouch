@@ -13,46 +13,50 @@ terraform {
   }
 }
 
-# Provider Configuration
+# -----------------------------------------------------------------------------
+# PROVIDER CONFIGURATION
+# -----------------------------------------------------------------------------
 provider "aws" {
   region = var.aws_region
 
   default_tags {
     tags = {
-      Environment            = var.environment
-      Project               = "zero-touch"
-      ManagedBy             = "terraform"
-      Component             = "nat-gateway"
-      Compliance            = "SOX"
-      DataClassification    = "Internal"
-      Support               = "24x7"
-      Criticality           = "High"
+      Environment         = var.environment
+      Project             = "zero-touch"
+      ManagedBy           = "terraform"
+      Component           = "nat-gateway"
+      Compliance          = "SOX"
+      DataClassification  = "Internal"
+      Support             = "24x7"
+      Criticality         = "High"
     }
   }
 }
 
-# Get VPC information
-data "aws_vpc" "main" {
-  id = var.vpc_id
-}
-
-# Get Internet Gateway information
-data "aws_internet_gateway" "main" {
+# -----------------------------------------------------------------------------
+# DATA BLOCKS — FETCH EXISTING VPC AND IGW DYNAMICALLY
+# -----------------------------------------------------------------------------
+data "aws_vpc" "selected" {
   filter {
-    name   = "attachment.vpc-id"
-    values = [var.vpc_id]
+    name   = "tag:Name"
+    values = ["${var.environment}-vpc"]
   }
 }
 
-# NAT Gateway Module - PRODUCTION MULTI-AZ CONFIGURATION
-module "nat_gateway" {
-  source = "../../../../modules/nat-gateway"
+data "aws_internet_gateway" "selected" {
+  filter {
+    name   = "attachment.vpc-id"
+    values = [data.aws_vpc.selected.id]
+  }
+}
 
+# -----------------------------------------------------------------------------
+# MODULE — NAT GATEWAY (MULTI-AZ HIGH AVAILABILITY)
+# -----------------------------------------------------------------------------
+module "nat_gateway" {
+  source = "../../../modules/nat-gateway"
   environment          = var.environment
-  vpc_id              = var.vpc_id
-  internet_gateway_id = data.aws_internet_gateway.main.id
-  
-  # Production High Availability Configuration
-  create_nat_gateways = true
-  # Do not pass single_nat_gateway or tags if not supported by module
+  vpc_id               = data.aws_vpc.selected.id
+  internet_gateway_id  = data.aws_internet_gateway.selected.id
+  create_nat_gateways  = true
 }

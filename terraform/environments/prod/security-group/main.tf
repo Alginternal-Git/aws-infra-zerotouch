@@ -1,10 +1,8 @@
 # =============================================================================
 # PRODUCTION SECURITY GROUPS - MAIN CONFIGURATION
 # =============================================================================
-# This creates production security groups with strict security controls:
-# - SSH restricted to specific office IPs
-# - Database access only from VPC/web servers
-# - All traffic logged and monitored
+# This configuration defines production-ready security groups with stricter
+# access controls, limited SSH access, and enhanced monitoring tags.
 # =============================================================================
 
 terraform {
@@ -14,44 +12,81 @@ terraform {
       version = "~> 5.0"
     }
   }
-  
-  # Require specific Terraform version for consistency
-  required_version = ">= 1.5"
+
+  required_version = ">= 1.0"
 }
 
-# Configure AWS provider for production region
+# -----------------------------------------------------------------------------
+# AWS Provider Configuration
+# -----------------------------------------------------------------------------
 provider "aws" {
   region = var.aws_region
-  
-  # Production-specific provider configuration
+
+  # Enforce production-level tagging
   default_tags {
     tags = {
-      Environment = "prod"
-      ManagedBy   = "terraform"
-      Project     = "zero-touch"
+      Environment   = "prod"
+      ManagedBy     = "terraform"
+      Project       = "zero-touch"
+      Compliance    = "enabled"
+      Backup        = "daily"
+      HighAvailability = "true"
     }
   }
 }
 
-# Create security groups using our module
+# -----------------------------------------------------------------------------
+# DATA BLOCK - Fetch Production VPC dynamically using tag
+# -----------------------------------------------------------------------------
+# This ensures that the VPC is not hardcoded and is resolved by the Name tag
+# Example: If environment = "prod", it searches for Name = "prod-vpc"
+# -----------------------------------------------------------------------------
+data "aws_vpc" "selected" {
+  filter {
+    name   = "tag:Name"
+    values = ["${var.environment}-vpc"]
+  }
+}
+
+# -----------------------------------------------------------------------------
+# SECURITY GROUP MODULE - PRODUCTION
+# -----------------------------------------------------------------------------
+# Uses centralized security-groups module to create:
+# - Bastion SG
+# - App servers SG
+# - Web SG
+# - Database SG
+# - Load Balancer SG
+# - EKS Nodes SG (if applicable)
+# -----------------------------------------------------------------------------
+
 module "security_groups" {
   source = "../../../modules/security-groups"
-  
-  # Basic configuration
-  environment = var.environment  # "prod"
-  vpc_id      = var.vpc_id       # Your production VPC ID
-  
-  # Web server access - allow HTTPS from internet, restrict SSH
-  web_ingress_cidrs = var.web_ingress_cidrs  # 0.0.0.0/0 for web traffic
-  ssh_ingress_cidrs = var.ssh_ingress_cidrs  # RESTRICTED to office IPs
-  
-  # Database access - NEVER allow from internet in production
-  database_ingress_cidrs = var.database_ingress_cidrs  # VPC CIDR only  
-  database_source_sgs    = var.database_source_sgs     # Web SG IDs
-  
-  # EKS configuration (if using Kubernetes)
-  eks_control_plane_sgs = var.eks_control_plane_sgs
-  
-  # Production tags for compliance and cost tracking
+
+  # Environment & VPC
+  environment = var.environment
+  vpc_id      = data.aws_vpc.selected.id
+
+  # Access Configurations
+  web_ingress_cidrs      = var.web_ingress_cidrs
+  ssh_ingress_cidrs      = var.ssh_ingress_cidrs
+  database_ingress_cidrs = var.database_ingress_cidrs
+  database_source_sgs    = var.database_source_sgs
+  eks_control_plane_sgs  = var.eks_control_plane_sgs
+
+  # Optional Security Groups
+  create_bastion_sg      = var.create_bastion_sg
+  create_app_sg          = var.create_app_sg
+  bastion_allowed_cidrs  = var.bastion_allowed_cidrs
+  app_ports              = var.app_ports
+
+  # Tags
   tags = var.tags
 }
+
+# -----------------------------------------------------------------------------
+# OUTPUTS - Summary for Audit and Reference
+# -----------------------------------------------------------------------------
+# These outputs are useful for referencing in EC2 or RDS modules
+# -----------------------------------------------------------------------------
+

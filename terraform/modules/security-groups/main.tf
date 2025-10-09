@@ -278,7 +278,7 @@ resource "aws_security_group" "app_servers" {
   }
 
   # HTTPS access from bastion (for testing/management)
-  ingress {
+  ingress { 
     description     = "HTTPS from bastion"
     from_port       = 443
     to_port         = 443

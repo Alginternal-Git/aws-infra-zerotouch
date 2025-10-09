@@ -1,10 +1,10 @@
 # =============================================================================
-# PRODUCTION RDS - MAIN CONFIGURATION (ENTERPRISE GRADE)
+# PRODUCTION RDS - MAIN CONFIGURATION (FULLY DYNAMIC DISCOVERY)
 # =============================================================================
 
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -17,28 +17,65 @@ terraform {
   }
 }
 
-# Provider Configuration
+# -----------------------------------------------------------------------------
+# PROVIDER CONFIGURATION
+# -----------------------------------------------------------------------------
 provider "aws" {
   region = var.aws_region
 
   default_tags {
     tags = {
-      Environment            = var.environment
-      Project               = "zero-touch"
-      ManagedBy             = "terraform"
-      Compliance            = "SOX"
-      DataClassification    = "Internal"
-      CreatedBy             = "infrastructure-team"
-      Component             = "rds"
+      Environment         = var.environment
+      Project             = "zero-touch"
+      ManagedBy           = "terraform"
+      Compliance          = "SOX"
+      DataClassification  = "Internal"
+      CreatedBy           = "infrastructure-team"
+      Component           = "rds"
     }
   }
 }
 
 provider "random" {}
 
-# KMS Key for Production Database Encryption
+# -----------------------------------------------------------------------------
+# DATA BLOCKS - Dynamic Discovery
+# -----------------------------------------------------------------------------
+
+# ✅ 1️⃣ Discover VPC by environment tag (e.g., "prod-vpc")
+data "aws_vpc" "selected" {
+  filter {
+    name   = "tag:Name"
+    values = ["${var.environment}-vpc"]
+  }
+}
+
+# ✅ 2️⃣ Discover private subnets for RDS placement
+data "aws_subnets" "private" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.selected.id]
+  }
+
+  filter {
+    name   = "tag:Type"
+    values = ["private"]
+  }
+}
+
+# ✅ 3️⃣ Discover database security group by naming convention
+data "aws_security_group" "database" {
+  filter {
+    name   = "group-name"
+    values = ["${var.environment}-database-sg"]
+  }
+}
+
+# -----------------------------------------------------------------------------
+# KMS KEY FOR RDS ENCRYPTION
+# -----------------------------------------------------------------------------
 resource "aws_kms_key" "rds_encryption" {
-  description             = "KMS key for production RDS encryption"
+  description             = "KMS key for ${var.environment} RDS encryption"
   deletion_window_in_days = 7
   enable_key_rotation     = true
 
@@ -53,50 +90,57 @@ resource "aws_kms_alias" "rds_encryption" {
   target_key_id = aws_kms_key.rds_encryption.key_id
 }
 
-# Random password for additional security
+# -----------------------------------------------------------------------------
+# RANDOM PASSWORD (optional secure generation)
+# -----------------------------------------------------------------------------
 resource "random_password" "master_password" {
   count   = var.use_random_password ? 1 : 0
   length  = 32
   special = true
-  override_special = "!#$%&()*+,-.:;<=>?[]^_{|}~" # Exclude '/', '@', '"', and space
+  override_special = "!#$%&()*+,-.:;<=>?[]^_{|}~"
 }
 
-# RDS Database Module (Production Configuration)
+# -----------------------------------------------------------------------------
+# RDS MODULE CONFIGURATION
+# -----------------------------------------------------------------------------
 module "rds" {
-source = "../../../modules/rds"
+  source = "../../../modules/rds"
 
-  environment = var.environment
-  db_name     = var.db_name
+  # General
+  environment          = var.environment
+  db_name              = var.db_name
 
-  # Database Configuration
+  # Engine & Instance
   engine               = var.engine
   engine_version       = var.engine_version
   instance_class       = var.instance_class
   parameter_group_family = var.parameter_group_family
 
-  # Storage Configuration - Production Grade
+  # Storage & Encryption
   allocated_storage     = var.allocated_storage
   max_allocated_storage = var.max_allocated_storage
-  storage_type         = "gp3"
-  storage_encrypted    = true
+  storage_type          = "gp3"
+  storage_encrypted     = true
+  kms_key_id            = aws_kms_key.rds_encryption.arn
 
   # Credentials
   username = var.username
   password = var.use_random_password ? random_password.master_password[0].result : var.password
 
-  # Network Configuration - USING YOUR SPECIFIC PRODUCTION SUBNETS
-  subnet_ids         = var.subnet_ids
-  security_group_ids = [var.database_security_group_id]
+  # Network (AUTO DISCOVERED ✅)
+  vpc_id             = data.aws_vpc.selected.id
+  subnet_ids         = data.aws_subnets.private.ids
+  security_group_ids = [data.aws_security_group.database.id]
 
-  # Backup Configuration - Production Requirements
+  # Backup & Maintenance
   backup_retention_period = var.backup_retention_period
-  backup_window          = var.backup_window
-  maintenance_window     = var.maintenance_window
+  backup_window           = var.backup_window
+  maintenance_window      = var.maintenance_window
 
-  # Production specific settings
-  multi_az               = true   # High Availability - REQUIRED
-  skip_final_snapshot    = false  # Keep final snapshots
-  publicly_accessible    = false
+  # Production Hardening
+  multi_az            = true
+  skip_final_snapshot = true
+  deletion_protection = false
 
   tags = var.tags
 }

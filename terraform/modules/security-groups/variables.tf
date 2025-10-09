@@ -115,7 +115,7 @@ variable "bastion_allowed_cidrs" {
 variable "create_app_sg" {
   description = "Create application servers security group"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "app_ports" {

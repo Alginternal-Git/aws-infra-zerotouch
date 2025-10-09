@@ -13,12 +13,6 @@ variable "environment" {
   type        = string
   default     = "prod"
 }
-
-variable "vpc_id" {
-  description = "Production VPC ID where NAT Gateway will be created"
-  type        = string
-}
-
 variable "single_nat_gateway" {
   description = "Use single NAT Gateway (false for production high availability)"
   type        = bool

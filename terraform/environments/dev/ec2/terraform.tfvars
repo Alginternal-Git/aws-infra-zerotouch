@@ -1,13 +1,20 @@
-aws_region            = "us-east-1"
-environment           = "dev"
-vpc_id                = "vpc-0f13f9687b72a6e03"
-bastion_sg_id         = "sg-06ea978d8ef2586cd"
-app_sg_id             = "sg-028ca0fcfa1b0d612"
+# ------------------------------------------------------
+#  Environment & Region Settings
+# ------------------------------------------------------
+aws_region  = "us-east-1"
+environment = "dev"
+
+# ------------------------------------------------------
+# EC2 Configuration
+# ------------------------------------------------------
 key_name              = "dev-dev-keypair"
 bastion_instance_type = "t3.micro"
 app_instance_type     = "t3.small"
-app_server_count      = 0
+app_server_count      = 1 # Set to >0 to launch app servers
 
+# ------------------------------------------------------
+# Tagging (Common + Resource Specific)
+# ------------------------------------------------------
 common_tags = {
   Environment = "dev"
   Project     = "zero-touch"
@@ -19,3 +26,18 @@ resource_tags = {
   CostCenter = "development"
   Backup     = "daily"
 }
+
+# ------------------------------------------------------
+# Removed hardcoded IDs
+# ------------------------------------------------------
+# vpc_id                = "vpc-0f13f9687b72a6e03"
+#  bastion_sg_id         = "sg-06ea978d8ef2586cd"
+#  app_sg_id             = "sg-028ca0fcfa1b0d612"
+#
+# ✅ These IDs are now dynamically fetched via data blocks in main.tf:
+#   - data "aws_vpc" "selected"         → gets VPC by tag/name
+#   - data "aws_security_group" "bastion" → gets bastion SG by tag/name
+#   - data "aws_security_group" "app"     → gets app SG by tag/name
+#
+# ✅ Benefit: No need to manually update IDs across environments.
+#             Just tag resources properly and Terraform finds them automatically.

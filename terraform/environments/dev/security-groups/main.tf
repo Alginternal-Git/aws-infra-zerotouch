@@ -1,9 +1,8 @@
 # =============================================================================
-# DEVELOPMENT SECURITY GROUPS - MAIN CONFIGURATION
+# DEVELOPMENT SECURITY GROUPS - MAIN CONFIGURATION (Dynamic Version)
 # =============================================================================
 # Development environment with relaxed security settings for easier testing
-# and development workflows. Some security restrictions are loosened to allow
-# developers to work more efficiently while still maintaining basic security.
+# and development workflows. VPC is dynamically fetched based on environment.
 # =============================================================================
 
 terraform {
@@ -14,44 +13,74 @@ terraform {
     }
   }
   
-  # Allow more flexibility in Terraform versions for dev
   required_version = ">= 1.0"
 }
 
-# Configure AWS provider for development region
+# -----------------------------------------------------------------------------
+# PROVIDER CONFIGURATION
+# -----------------------------------------------------------------------------
 provider "aws" {
   region = var.aws_region
-  
-  # Development-specific provider configuration
+
+  # Development-specific tagging (auto-applied to all resources)
   default_tags {
     tags = {
-      Environment = "dev"
-      ManagedBy   = "terraform"
-      Project     = "zero-touch"
+      Environment  = "dev"
+      ManagedBy    = "terraform"
+      Project      = "zero-touch"
       AutoShutdown = "enabled"  # Dev resources can be auto-stopped
     }
   }
 }
 
-# Create security groups using our module
+# -----------------------------------------------------------------------------
+# DATA BLOCK - Fetch VPC dynamically by environment tag
+# -----------------------------------------------------------------------------
+# Instead of hardcoding vpc_id, this automatically finds the VPC tagged 
+# Name = "dev-vpc". It ensures this config is portable across environments.
+data "aws_vpc" "selected" {
+  filter {
+    name   = "tag:Name"
+    values = ["${var.environment}-vpc"]
+  }
+}
+
+# -----------------------------------------------------------------------------
+# SECURITY GROUPS MODULE
+# -----------------------------------------------------------------------------
+# Creates all security groups dynamically inside the selected VPC.
+# Includes:
+# - Web SG
+# - Database SG
+# - Load Balancer SG
+# - EKS SG
+# - Bastion SG (optional)
+# - Application Server SG (optional)
+# -----------------------------------------------------------------------------
 module "security_groups" {
   source = "../../../modules/security-groups"
-  
+
   # Basic configuration
-  environment = var.environment  # "dev"
-  vpc_id      = var.vpc_id       # Your development VPC ID
-  
-  # Web server access - allow from internet, SSH more permissive in dev
-  web_ingress_cidrs = var.web_ingress_cidrs  # 0.0.0.0/0 for web traffic
-  ssh_ingress_cidrs = var.ssh_ingress_cidrs  # More permissive in dev
-  
-  # Database access - allow from VPC for dev testing
-  database_ingress_cidrs = var.database_ingress_cidrs  # VPC CIDR
-  database_source_sgs    = var.database_source_sgs     # Web SG IDs
-  
-  # EKS configuration (if testing Kubernetes in dev)
+  environment = var.environment
+  vpc_id      = data.aws_vpc.selected.id  # ✅ Dynamic (no hardcoding)
+
+  # Web server and SSH access
+  web_ingress_cidrs = var.web_ingress_cidrs
+  ssh_ingress_cidrs = var.ssh_ingress_cidrs
+
+  # Database access
+  database_ingress_cidrs = var.database_ingress_cidrs
+  database_source_sgs    = var.database_source_sgs
+
+  # EKS communication (if testing Kubernetes in dev)
   eks_control_plane_sgs = var.eks_control_plane_sgs
-  
-  # Development tags
+
+  # Bastion and App SG creation flags
+  create_bastion_sg = var.create_bastion_sg
+  create_app_sg     = var.create_app_sg
+  bastion_allowed_cidrs = var.bastion_allowed_cidrs
+  app_ports             = var.app_ports
+
+  # Tags for all SGs
   tags = var.tags
 }

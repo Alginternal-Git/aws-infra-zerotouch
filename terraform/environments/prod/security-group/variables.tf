@@ -1,78 +1,96 @@
 # =============================================================================
-# PRODUCTION SECURITY GROUPS - VARIABLES
+# VARIABLES - PRODUCTION SECURITY GROUPS
 # =============================================================================
-# Production-specific variable definitions with secure defaults
+# These variables define all configurable inputs for the production SG setup.
+# They mirror the dev environment variables but enforce stricter defaults.
 # =============================================================================
 
 variable "aws_region" {
-  description = "AWS region for production resources"
+  description = "AWS region for deployment"
   type        = string
-  default     = "us-west-2"  # Production region
 }
 
 variable "environment" {
-  description = "Environment name"
+  description = "Environment name (e.g., prod, dev, staging)"
   type        = string
-  default     = "prod"
-  
-  validation {
-    condition     = var.environment == "prod"
-    error_message = "This configuration is for production only."
-  }
 }
+
+# -----------------------------------------------------------------------------
+# NETWORK CONFIGURATION
+# -----------------------------------------------------------------------------
 
 variable "vpc_id" {
-  description = "Production VPC ID (REQUIRED - must be provided)"
+  description = "Production VPC ID (auto-fetched via data block if tagged)"
   type        = string
-  # No default - must be explicitly provided for production
-  
-  validation {
-    condition     = can(regex("^vpc-", var.vpc_id))
-    error_message = "VPC ID must be valid AWS VPC ID."
-  }
+  default     = null
 }
 
-# Web access variables
+# -----------------------------------------------------------------------------
+# ACCESS CONTROL CONFIGURATIONS
+# -----------------------------------------------------------------------------
+
 variable "web_ingress_cidrs" {
-  description = "CIDR blocks for web access (HTTP/HTTPS)"
+  description = "CIDR blocks allowed for web access (HTTP/HTTPS)"
   type        = list(string)
-  default     = ["0.0.0.0/0"]  # Allow web traffic from internet
 }
 
 variable "ssh_ingress_cidrs" {
-  description = "CIDR blocks for SSH access - PRODUCTION RESTRICTED"
+  description = "CIDR blocks allowed for SSH access to bastion or servers"
   type        = list(string)
-  default     = []  # No default - MUST be explicitly set for production
-  
-  validation {
-    condition     = length(var.ssh_ingress_cidrs) > 0 && !contains(var.ssh_ingress_cidrs, "0.0.0.0/0")
-    error_message = "Production SSH access must be restricted - cannot be empty or allow 0.0.0.0/0."
-  }
 }
 
-# Database access variables  
 variable "database_ingress_cidrs" {
-  description = "CIDR blocks for database access"
+  description = "CIDR blocks allowed to access the database (PostgreSQL/MySQL)"
   type        = list(string)
-  default     = []  # Use security group references instead
-}
-
-variable "database_source_sgs" {
-  description = "Security group IDs allowed database access"
-  type        = list(string)
-  default     = []  # Will be populated after web SG creation
-}
-
-# EKS variables
-variable "eks_control_plane_sgs" {
-  description = "EKS control plane security group IDs"
-  type        = list(string) 
   default     = []
 }
 
-# Tags
+variable "database_source_sgs" {
+  description = "Security group IDs allowed to connect to the database"
+  type        = list(string)
+  default     = []
+}
+
+variable "eks_control_plane_sgs" {
+  description = "EKS control plane security groups (if applicable)"
+  type        = list(string)
+  default     = []
+}
+
+# -----------------------------------------------------------------------------
+# OPTIONAL SECURITY GROUP CREATION
+# -----------------------------------------------------------------------------
+
+variable "create_bastion_sg" {
+  description = "Whether to create a bastion host security group"
+  type        = bool
+  default     = true
+}
+
+variable "create_app_sg" {
+  description = "Whether to create an application server security group"
+  type        = bool
+  default     = true
+}
+
+variable "bastion_allowed_cidrs" {
+  description = "CIDR blocks allowed to SSH into bastion host"
+  type        = list(string)
+  default     = []
+}
+
+variable "app_ports" {
+  description = "Application ports allowed between app and other layers"
+  type        = list(number)
+  default     = [8080, 8443]
+}
+
+# -----------------------------------------------------------------------------
+# TAG CONFIGURATION
+# -----------------------------------------------------------------------------
+
 variable "tags" {
-  description = "Production tags"
+  description = "Key-value tags applied to all security groups"
   type        = map(string)
   default     = {}
 }

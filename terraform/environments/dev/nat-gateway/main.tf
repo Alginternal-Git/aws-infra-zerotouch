@@ -1,5 +1,5 @@
 # =============================================================================
-# DEVELOPMENT NAT GATEWAY - MAIN CONFIGURATION (CORRECTED)
+# DEVELOPMENT NAT GATEWAY - MAIN CONFIGURATION (FINALIZED)
 # =============================================================================
 
 terraform {
@@ -13,7 +13,9 @@ terraform {
   }
 }
 
-# Provider Configuration
+# -----------------------------------------------------------------------------
+# PROVIDER CONFIGURATION
+# -----------------------------------------------------------------------------
 provider "aws" {
   region = var.aws_region
 
@@ -27,30 +29,45 @@ provider "aws" {
   }
 }
 
-# Get VPC information
-data "aws_vpc" "main" {
-  id = var.vpc_id
-}
-
-# Get Internet Gateway information
-data "aws_internet_gateway" "main" {
+# -----------------------------------------------------------------------------
+# DATA BLOCK - DYNAMICALLY FETCH EXISTING VPC AND IGW
+# -----------------------------------------------------------------------------
+# This removes the need to hardcode IDs in tfvars
+data "aws_vpc" "selected" {
   filter {
-    name   = "attachment.vpc-id"
-    values = [var.vpc_id]
+    name   = "tag:Name"
+    values = ["${var.environment}-vpc"]
   }
 }
 
-# NAT Gateway Module - CORRECTED ARGUMENTS
+data "aws_internet_gateway" "selected" {
+  filter {
+    name   = "attachment.vpc-id"
+    values = [data.aws_vpc.selected.id]
+  }
+}
+
+# -----------------------------------------------------------------------------
+# MODULE - NAT GATEWAY (DEVELOPMENT FRIENDLY)
+# -----------------------------------------------------------------------------
+# Creates a single NAT Gateway (cost-optimized)
 module "nat_gateway" {
   source = "../../../modules/nat-gateway"
 
-  # Only pass variables that exist in the module
   environment          = var.environment
-  vpc_id              = var.vpc_id
-  internet_gateway_id = data.aws_internet_gateway.main.id
-  create_nat_gateways = true
-  
-  # Remove single_nat_gateway and tags - they don't exist in module
-  # single_nat_gateway = var.single_nat_gateway  ← REMOVE THIS
-  # tags = var.tags                               ← REMOVE THIS
+  vpc_id               = data.aws_vpc.selected.id
+  internet_gateway_id  = data.aws_internet_gateway.selected.id
+  create_nat_gateways  = true
+}
+
+# -----------------------------------------------------------------------------
+# OUTPUTS
+# -----------------------------------------------------------------------------
+output "nat_gateway_summary" {
+  description = "Summary of NAT Gateway resources"
+  value = {
+    environment = var.environment
+    vpc_id      = data.aws_vpc.selected.id
+    igw_id      = data.aws_internet_gateway.selected.id
+  }
 }

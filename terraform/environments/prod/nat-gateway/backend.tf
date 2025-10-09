@@ -2,7 +2,7 @@ terraform {
   backend "s3" {
     bucket         = "aws-zero-touch-terraform-states"
     key            = "environments/prod/nat-gateway/terraform.tfstate"
-    region         = "us-west-2"
+    region         = "us-east-1"
     dynamodb_table = "terraform-locks"
     encrypt        = true
   }
