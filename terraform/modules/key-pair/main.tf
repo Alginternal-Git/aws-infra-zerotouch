@@ -24,12 +24,24 @@ resource "tls_private_key" "kp" {
   rsa_bits  = 4096
 }
 
-# Create AWS key pair from the generated public key
-resource "aws_key_pair" "kp" {
-  key_name   = "${var.environment}-${var.key_name}-${random_id.suffix.hex}"
-  public_key = tls_private_key.kp.public_key_openssh
+ # ------------------------------------------------------------
+# Generate a new private key locally
+# ------------------------------------------------------------
+resource "tls_private_key" "kp" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
 
-  tags = merge(
+# ------------------------------------------------------------
+# Save the private key as a .pem file inside the module folder
+# ------------------------------------------------------------
+resource "local_file" "private_key_file" {
+  content         = tls_private_key.kp.private_key_pem
+  filename        = "${path.module}/${var.environment}-${var.key_name}.pem"
+  file_permission = "0600"
+}
+
+tags = merge(
     var.tags,
     {
       Name        = "${var.environment}-${var.key_name}"
@@ -38,13 +50,4 @@ resource "aws_key_pair" "kp" {
       CreatedBy   = "Terraform"
     }
   )
-}
-
-# Save private key locally (optional)
-resource "local_file" "private_key_file" {
-  content  = tls_private_key.kp.private_key_pem
-  filename = "${path.module}/${var.environment}-${var.key_name}.pem"
-
-  # Restrict permissions to owner only
-  file_permission = "0600"
 }

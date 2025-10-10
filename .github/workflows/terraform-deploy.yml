@@ -92,7 +92,7 @@ jobs:
         if: success() && inputs.service == 'key-pair'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.environment }}-keypair
+          name: ${{ inputs.environment }}-key-pair
           path: terraform/modules/key-pair/*.pem
 
       # -------------------------------------------------------------
