@@ -1,7 +1,7 @@
 name: Terraform Deployment
 
 on:
-  #  Manual trigger in GitHub Actions UI
+  # Manual trigger in GitHub Actions UI
   workflow_dispatch:
     inputs:
       environment:
@@ -33,34 +33,31 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      #  Dynamic AWS Region Selection
-      #  Replace with your actual regions:
-      # Example: dev → ap-south-1 (Mumbai), prod → eu-west-1 (Ireland)
+      # Dynamic AWS Region Selection
       AWS_REGION: ${{ inputs.environment == 'prod' && 'us-west-2' || 'us-east-1' }}
 
-      #  Select Terraform working directory dynamically
+      # Dynamic Terraform Working Directory
       TF_WORKING_DIR: terraform/environments/${{ inputs.environment }}/${{ inputs.service }}
 
     steps:
       # -------------------------------------------------------------
-      # Step 1: Checkout repository code
+      # Step 1: Checkout repository
       # -------------------------------------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
       # -------------------------------------------------------------
-      #  Step 2: Configure AWS credentials securely
-      #    (Add your AWS keys in GitHub → Settings → Secrets → Actions)
+      # Step 2: Configure AWS Credentials
       # -------------------------------------------------------------
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        
+          aws-region: ${{ env.AWS_REGION }}
 
       # -------------------------------------------------------------
-      #  Step 3: Setup Terraform
+      # Step 3: Setup Terraform
       # -------------------------------------------------------------
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -68,35 +65,41 @@ jobs:
           terraform_version: 1.9.0
 
       # -------------------------------------------------------------
-      #  Step 4: Terraform Init
-      # Initializes backend, providers, and plugins
+      # Step 4: Terraform Init
       # -------------------------------------------------------------
       - name: Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_WORKING_DIR }}
 
       # -------------------------------------------------------------
-      #  Step 5: Terraform Plan
-      # Shows what will be created/modified/destroyed
+      # Step 5: Terraform Plan
       # -------------------------------------------------------------
       - name: Terraform Plan
         run: terraform plan -var="aws_region=${{ env.AWS_REGION }}"
         working-directory: ${{ env.TF_WORKING_DIR }}
 
       # -------------------------------------------------------------
-      #  Step 6: Terraform Apply
-      # Applies all infrastructure changes automatically
+      # Step 6: Terraform Apply
       # -------------------------------------------------------------
       - name: Terraform Apply
         run: terraform apply -auto-approve -var="aws_region=${{ env.AWS_REGION }}"
         working-directory: ${{ env.TF_WORKING_DIR }}
 
       # -------------------------------------------------------------
-      #  Step 7: Print Deployment Summary
+      # Step 7: Upload PEM key as artifact (NEW)
+      # -------------------------------------------------------------
+      - name: Upload PEM key as artifact
+        if: success() && inputs.service == 'key-pair'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.environment }}-keypair
+          path: modules/key-pair/*.pem
+
+      # -------------------------------------------------------------
+      # Step 8: Print Deployment Summary
       # -------------------------------------------------------------
       - name: Print Deployment Info
         run: |
-          echo " Terraform deployment completed successfully!"
+          echo "Terraform deployment completed successfully!"
           echo "Environment: ${{ inputs.environment }}"
           echo "Service: ${{ inputs.service }}"
-          
