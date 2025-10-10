@@ -20,7 +20,7 @@ on:
           - subnets
           - security-groups
           - ec2
-          - keypair
+          - key-pair
           - eks
           - s3
           - internet-gateway
