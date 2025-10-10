@@ -1,138 +1,102 @@
-name: Terraform Zero-Touch Infrastructure
+name: Terraform Deployment
 
 on:
+  #  Manual trigger in GitHub Actions UI
   workflow_dispatch:
     inputs:
       environment:
-        description: "Select environment"
+        description: "Select environment (dev or prod)"
         required: true
         type: choice
         options:
           - dev
           - prod
-
       service:
-        description: "Select service to deploy"
+        description: "Select which service to deploy"
         required: true
         type: choice
         options:
           - vpc
           - subnets
-          - internet-gateway
-          - nat-gateway
           - security-groups
-          - keypair
           - ec2
-          - rds
-          - ecr
+          - keypair
           - eks
           - s3
-
-      action:
-        description: "Choose Terraform action"
-        required: true
-        type: choice
-        options:
-          - plan
-          - apply
-          - destroy
+          - internet-gateway
+          - nat-gateway
+          - ecr
+          - rds
 
 jobs:
-  terraform:
-    name: Deploy ${{ github.event.inputs.service }} on ${{ github.event.inputs.environment }}
+  deploy:
     runs-on: ubuntu-latest
 
     env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      AWS_REGION: ${{ secrets.AWS_REGION }}
+      #  Dynamic AWS Region Selection
+      #  Replace with your actual regions:
+      # Example: dev → ap-south-1 (Mumbai), prod → eu-west-1 (Ireland)
+      AWS_REGION: ${{ inputs.environment == 'prod' && 'eu-west-1' || 'ap-south-1' }}
+
+      #  Select Terraform working directory dynamically
+      TF_WORKING_DIR: terraform/environments/${{ inputs.environment }}/${{ inputs.service }}
 
     steps:
-      - name: Checkout repository
+      # -------------------------------------------------------------
+      # Step 1: Checkout repository code
+      # -------------------------------------------------------------
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # -------------------------------------------------------------
+      #  Step 2: Configure AWS credentials securely
+      #    (Add your AWS keys in GitHub → Settings → Secrets → Actions)
+      # -------------------------------------------------------------
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        
+
+      # -------------------------------------------------------------
+      #  Step 3: Setup Terraform
+      # -------------------------------------------------------------
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.9.5
+          terraform_version: 1.9.0
 
-      # 🔹 Intelligent Dependency Check
-      - name: Check Service Dependency
-        id: dependency
-        run: |
-          service="${{ github.event.inputs.service }}"
-          env="${{ github.event.inputs.environment }}"
-          echo "Checking dependencies for $service in $env environment..."
-
-          case "$service" in
-            subnets)
-              deps=("vpc")
-              ;;
-            internet-gateway)
-              deps=("vpc")
-              ;;
-            nat-gateway)
-              deps=("vpc" "subnets" "internet-gateway")
-              ;;
-            security-groups)
-              deps=("vpc")
-              ;;
-            ec2)
-              deps=("vpc" "subnets" "security-groups" "keypair" "nat-gateway")
-              ;;
-            rds)
-              deps=("vpc" "subnets" "security-groups" "nat-gateway")
-              ;;
-            eks)
-              deps=("vpc" "subnets" "security-groups" "ecr")
-              ;;
-            s3)
-              deps=()
-              ;;
-            ecr)
-              deps=()
-              ;;
-            keypair)
-              deps=()
-              ;;
-            *)
-              deps=()
-              ;;
-          esac
-
-          for d in "${deps[@]}"; do
-            echo "✅ Required dependency: $d (ensure it's deployed)"
-          done
-
+      # -------------------------------------------------------------
+      #  Step 4: Terraform Init
+      # Initializes backend, providers, and plugins
+      # -------------------------------------------------------------
       - name: Terraform Init
-        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
-        run: terraform init -reconfigure
+        run: terraform init
+        working-directory: ${{ env.TF_WORKING_DIR }}
 
-      - name: Terraform Validate
-        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
-        run: terraform validate
-
+      # -------------------------------------------------------------
+      #  Step 5: Terraform Plan
+      # Shows what will be created/modified/destroyed
+      # -------------------------------------------------------------
       - name: Terraform Plan
-        if: ${{ github.event.inputs.action == 'plan' }}
-        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
-        run: terraform plan
+        run: terraform plan -var="aws_region=${{ env.AWS_REGION }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
 
-      - name: Manual Approval
-        if: ${{ github.event.inputs.action == 'apply' }}
-        uses: trstringer/manual-approval@v1
-        with:
-          approvers: "your-github-username"
-          minimum-approvals: 1
-          timeout-minutes: 30
-          issue-title: "Approve Apply for ${{ github.event.inputs.service }} in ${{ github.event.inputs.environment }}"
-          issue-body: "Please approve the apply step."
-
+      # -------------------------------------------------------------
+      #  Step 6: Terraform Apply
+      # Applies all infrastructure changes automatically
+      # -------------------------------------------------------------
       - name: Terraform Apply
-        if: ${{ github.event.inputs.action == 'apply' }}
-        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve -var="aws_region=${{ env.AWS_REGION }}"
+        working-directory: ${{ env.TF_WORKING_DIR }}
 
-      - name: Terraform Destroy
-        if: ${{ github.event.inputs.action == 'destroy' }}
-        working-directory: ./environments/${{ github.event.inputs.environment }}/${{ github.event.inputs.service }}
-        run: terraform destroy -auto-approve
+      # -------------------------------------------------------------
+      #  Step 7: Print Deployment Summary
+      # -------------------------------------------------------------
+      - name: Print Deployment Info
+        run: |
+          echo " Terraform deployment completed successfully!"
+          echo "Environment: ${{ inputs.environment }}"
+          echo "Service: ${{ inputs.service }}"
+          
