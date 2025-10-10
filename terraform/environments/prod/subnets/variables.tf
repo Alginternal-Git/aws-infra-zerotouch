@@ -9,21 +9,10 @@ variable "environment" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC ID"
-  type        = string
-}
-
 variable "create_public_subnets" {
   description = "Create public subnets"
   type        = bool
   default     = true
-}
-
-variable "internet_gateway_id" {
-  description = "Internet Gateway ID"
-  type        = string
-  default     = null
 }
 
 variable "public_subnets" {

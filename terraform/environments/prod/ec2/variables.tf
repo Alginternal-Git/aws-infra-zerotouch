@@ -6,10 +6,6 @@ variable "environment" {
   default = "prod"
 }
 
-variable "key_name" {
-  default = "prod-keypair"
-}
-
 variable "tags" {
   default = {
     Environment = "prod"

@@ -1,32 +1,48 @@
-resource "tls_private_key" "key" {
+# =============================================================================
+# MODULE: Key Pair
+# Description: Creates an EC2 Key Pair (public in AWS, private PEM locally)
+# =============================================================================
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
+    }
+  }
+}
+
+# ----------------------------------------------------------------------------- 
+# Generate a private key locally
+# -----------------------------------------------------------------------------
+resource "tls_private_key" "kp" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
+# ----------------------------------------------------------------------------- 
+# Create AWS key pair with environment-based name
+# -----------------------------------------------------------------------------
 resource "aws_key_pair" "kp" {
-  key_name   = "${var.environment}-${var.name}"
-  public_key = tls_private_key.key.public_key_openssh
-
-  tags = merge(var.tags, {
-    Name = "${var.environment}-${var.name}"
-    Type = "ssh-key"
-  })
+  key_name   = "${var.environment}-key-pair"
+  public_key = tls_private_key.kp.public_key_openssh
 }
 
+# ----------------------------------------------------------------------------- 
+# Save private key to a PEM file (artifact)
+# -----------------------------------------------------------------------------
 resource "local_file" "private_key_file" {
-  content          = tls_private_key.key.private_key_pem
-  filename         = "${var.key_save_path}/${var.environment}-${var.name}.pem"
-  file_permission  = "0400"
+  content         = tls_private_key.kp.private_key_pem
+  filename        = "${path.module}/${var.environment}-key-pair.pem"
+  file_permission = "0600"
 }
 
-resource "aws_ssm_parameter" "private_key_ssm" {
-  count = var.store_private_key_ssm ? 1 : 0
 
-  name  = "/${var.environment}/ssh/${var.name}/private-key"
-  type  = "SecureString"
-  value = tls_private_key.key.private_key_pem
-
-  tags = merge(var.tags, {
-    Name = "${var.environment}-${var.name}-private-key"
-  })
-}

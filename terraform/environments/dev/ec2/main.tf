@@ -59,6 +59,12 @@ data "aws_security_group" "app_servers" {
   }
   vpc_id = data.aws_vpc.selected.id
 }
+# ----------------------------------------------------------------------------- 
+# FETCH EXISTING KEY PAIR CREATED BY KEY-PAIR MODULE 
+# -----------------------------------------------------------------------------
+data "aws_key_pair" "existing" {
+  key_name = "${var.environment}-key-pair"
+}
 
 # -----------------------------------------------------------------------------
 # MODULE CALL - EC2
@@ -68,7 +74,7 @@ module "ec2" {
 
   environment                = var.environment
   vpc_id                     = data.aws_vpc.selected.id
-  key_name                   = var.key_name
+  key_name                   = data.aws_key_pair.existing.key_name
   public_subnet_ids          = data.aws_subnets.public.ids
   private_subnet_ids         = data.aws_subnets.private.ids
   bastion_security_group_ids = [data.aws_security_group.bastion.id]

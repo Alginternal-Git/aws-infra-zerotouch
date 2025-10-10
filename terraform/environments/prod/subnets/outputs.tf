@@ -12,3 +12,4 @@ output "all_subnet_ids" {
   description = "All subnet IDs"
   value       = module.subnets.all_subnet_ids
 }
+

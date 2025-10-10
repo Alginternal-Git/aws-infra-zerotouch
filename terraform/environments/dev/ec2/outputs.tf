@@ -38,7 +38,7 @@ output "dev_ec2_summary" {
     bastion_public_ip = try(module.ec2.bastion_public_ip, "not assigned")
     app_count         = length(try(module.ec2.app_server_ids, []))
     app_private_ips   = try(module.ec2.app_private_ips, [])
-    key_name          = var.key_name
+    key_name           = data.aws_key_pair.existing.key_name
     status            = "Development Environment Deployed Successfully"
   }
 }

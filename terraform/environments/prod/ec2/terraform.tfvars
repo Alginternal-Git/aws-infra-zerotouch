@@ -4,8 +4,6 @@
 
 aws_region  = "us-west-2"
 environment = "prod"
-
-key_name              = "prod-prod-keypair"
 bastion_instance_type = "t3.micro"
 app_instance_type     = "t2.micro"
 
