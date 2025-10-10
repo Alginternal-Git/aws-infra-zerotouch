@@ -33,7 +33,7 @@ resource "tls_private_key" "kp" {
 # 2. Create AWS key pair (upload public key)
 # -----------------------------------------------------------------------------
 resource "aws_key_pair" "kp" {
-  key_name   = "${var.environment}-key-pair"
+  key_name   = var.key_name
   public_key = tls_private_key.kp.public_key_openssh
 }
 

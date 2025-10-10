@@ -17,9 +17,7 @@ variable "environment" {
 }
 
 variable "key_name" {
-  description = "Base name for the key pair"
-  type        = string
-  default     = "keypair"
+  default = "dev-keypair"
 }
 
 variable "tags" {
