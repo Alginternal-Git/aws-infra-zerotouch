@@ -63,7 +63,7 @@ data "aws_security_group" "app_servers" {
 # FETCH EXISTING KEY PAIR CREATED BY KEY-PAIR MODULE 
 # -----------------------------------------------------------------------------
 data "aws_key_pair" "existing" {
-  key_name = "${var.environment}-keypair" # must match the name you created earlier
+  key_name = "${var.environment}-key-pair"
 }
 
 # -----------------------------------------------------------------------------

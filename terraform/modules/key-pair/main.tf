@@ -1,7 +1,6 @@
 # =============================================================================
 # MODULE: Key Pair
-# Description: Generates SSH key pair for EC2 access, uploads to AWS,
-#              and stores private key locally as PEM file.
+# Description: Creates an EC2 Key Pair (public in AWS, private PEM locally)
 # =============================================================================
 
 terraform {
@@ -21,27 +20,29 @@ terraform {
   }
 }
 
-# -----------------------------------------------------------------------------
-# 1. Generate SSH key pair locally
+# ----------------------------------------------------------------------------- 
+# Generate a private key locally
 # -----------------------------------------------------------------------------
 resource "tls_private_key" "kp" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-# -----------------------------------------------------------------------------
-# 2. Create AWS key pair (upload public key)
+# ----------------------------------------------------------------------------- 
+# Create AWS key pair with environment-based name
 # -----------------------------------------------------------------------------
 resource "aws_key_pair" "kp" {
-  key_name   = var.key_name
+  key_name   = "${var.environment}-key-pair"
   public_key = tls_private_key.kp.public_key_openssh
 }
 
-# -----------------------------------------------------------------------------
-# 3. Save private key locally in module folder
+# ----------------------------------------------------------------------------- 
+# Save private key to a PEM file (artifact)
 # -----------------------------------------------------------------------------
 resource "local_file" "private_key_file" {
   content         = tls_private_key.kp.private_key_pem
-  filename        = "${path.module}/${var.environment}-${var.key_name}.pem"
+  filename        = "${path.module}/${var.environment}-key-pair.pem"
   file_permission = "0600"
 }
+
+
