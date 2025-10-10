@@ -48,14 +48,3 @@ resource "local_file" "private_key_file" {
   # Restrict permissions to owner only
   file_permission = "0600"
 }
-
-# Output key info
-output "key_name" {
-  description = "AWS Key Pair Name"
-  value       = aws_key_pair.kp.key_name
-}
-
-output "private_key_path" {
-  description = "Local path of generated private key file"
-  value       = local_file.private_key_file.filename
-}
