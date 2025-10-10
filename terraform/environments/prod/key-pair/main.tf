@@ -22,4 +22,5 @@ module "key_pair" {
   key_save_path         = "./keys/${var.environment}"
   store_private_key_ssm = true
   tags                  = var.resource_tags
+  aws_region  = var.aws_region
 }
