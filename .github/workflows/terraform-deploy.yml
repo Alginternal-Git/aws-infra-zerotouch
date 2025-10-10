@@ -85,15 +85,15 @@ jobs:
         run: terraform apply -auto-approve -var="aws_region=${{ env.AWS_REGION }}"
         working-directory: ${{ env.TF_WORKING_DIR }}
 
-      # -------------------------------------------------------------
-      # Step 7: Upload PEM key as artifact (NEW)
-      # -------------------------------------------------------------
+     # -------------------------------------------------------------
+#  Step 7: Upload PEM key as artifact (Fixed Path)
+# -------------------------------------------------------------
       - name: Upload PEM key as artifact
         if: success() && inputs.service == 'key-pair'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.environment }}-keypair
-          path: modules/key-pair/*.pem
+        name: ${{ inputs.environment }}-keypair
+        path: terraform/modules/key-pair/*.pem
 
       # -------------------------------------------------------------
       # Step 8: Print Deployment Summary
