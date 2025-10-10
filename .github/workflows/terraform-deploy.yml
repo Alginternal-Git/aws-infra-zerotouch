@@ -36,7 +36,7 @@ jobs:
       #  Dynamic AWS Region Selection
       #  Replace with your actual regions:
       # Example: dev → ap-south-1 (Mumbai), prod → eu-west-1 (Ireland)
-      AWS_REGION: ${{ inputs.environment == 'prod' && 'eu-west-1' || 'ap-south-1' }}
+      AWS_REGION: ${{ inputs.environment == 'prod' && 'us-west-2' || 'us-east-1' }}
 
       #  Select Terraform working directory dynamically
       TF_WORKING_DIR: terraform/environments/${{ inputs.environment }}/${{ inputs.service }}
