@@ -1,8 +1,11 @@
+provider "aws" {
+  region = var.aws_region
+}
+
 module "key_pair" {
-  source      = "../../../modules/key-pair"
-  environment = "dev"
-  name        = "dev-keypair"
+  source      = "../../../modules/keypair"
+  environment = var.environment
   aws_region  = var.aws_region
-  key_save_path = "./keys/dev"
+  key_name    = "${var.environment}-keypair"
   tags        = var.tags
 }
