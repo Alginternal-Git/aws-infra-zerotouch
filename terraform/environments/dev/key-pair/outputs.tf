@@ -12,5 +12,5 @@ output "keypair_name" {
 
 output "keypair_private_key_path" {
   description = "Local path of the generated PEM file"
-  value       = module.key_pair.private_key_path
+  value       = module.key_pair.keypair_private_key_path
 }
