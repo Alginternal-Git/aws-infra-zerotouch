@@ -1,5 +1,5 @@
 # =============================================================================
-# VARIABLES - PROD ENVIRONMENT (KEYPAIR MODULE)
+# VARIABLES - prod ENVIRONMENT (KEYPAIR MODULE)
 # =============================================================================
 # These variables are used by the prod environment to deploy the AWS key pair.
 # They are dynamically passed from the pipeline or Terraform CLI.
@@ -8,7 +8,6 @@
 variable "aws_region" {
   description = "AWS region to deploy resources"
   type        = string
-  default     = "us-west-2"  #  Production Region (Oregon)
 }
 
 variable "environment" {
@@ -18,13 +17,11 @@ variable "environment" {
 }
 
 variable "key_name" {
-  description = "Base name for the key pair"
-  type        = string
-  default     = "keypair"
+  default = "prod-keypair"
 }
 
 variable "tags" {
-  description = "Common tags applied to all production resources"
+  description = "Common tags applied to all resources"
   type        = map(string)
   default = {
     Project     = "aws-zero-touch"

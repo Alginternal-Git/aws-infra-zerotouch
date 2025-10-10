@@ -3,7 +3,7 @@ terraform {
     bucket         = "aws-zero-touch-terraform-states"
     key            = "environments/prod/subnets/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "terraform-locks"
+    dynamodb_table = "terraform-locks" 
     encrypt        = true
   }
 }
