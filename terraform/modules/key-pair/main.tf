@@ -1,7 +1,7 @@
 # =============================================================================
 # MODULE: Key Pair
-# Description: Creates an AWS EC2 key pair and saves the private key locally
-# Author: Prathyusha Y
+# Description: Generates SSH key pair for EC2 access, uploads to AWS,
+#              and stores private key locally as PEM file.
 # =============================================================================
 
 terraform {
@@ -10,44 +10,51 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
+    }
   }
 }
 
-# Random ID to avoid duplicate key names
-resource "random_id" "suffix" {
-  byte_length = 2
-}
-
-# Generate a new private key locally
+# -----------------------------------------------------------------------------
+# 1. Generate SSH key pair locally
+# -----------------------------------------------------------------------------
 resource "tls_private_key" "kp" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
- # ------------------------------------------------------------
-# Generate a new private key locally
-# ------------------------------------------------------------
-resource "tls_private_key" "kp" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
+# -----------------------------------------------------------------------------
+# 2. Create AWS key pair (upload public key)
+# -----------------------------------------------------------------------------
+resource "aws_key_pair" "kp" {
+  key_name   = "${var.environment}-${var.key_name}"
+  public_key = tls_private_key.kp.public_key_openssh
 }
 
-# ------------------------------------------------------------
-# Save the private key as a .pem file inside the module folder
-# ------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# 3. Save private key locally in module folder
+# -----------------------------------------------------------------------------
 resource "local_file" "private_key_file" {
   content         = tls_private_key.kp.private_key_pem
   filename        = "${path.module}/${var.environment}-${var.key_name}.pem"
   file_permission = "0600"
 }
 
-tags = merge(
-    var.tags,
-    {
-      Name        = "${var.environment}-${var.key_name}"
-      Environment = var.environment
-      ManagedBy   = "Zero-Touch-Infrastructure"
-      CreatedBy   = "Terraform"
-    }
-  )
+# -----------------------------------------------------------------------------
+# 4. Outputs
+# -----------------------------------------------------------------------------
+output "keypair_name" {
+  description = "AWS key pair name"
+  value       = aws_key_pair.kp.key_name
+}
+
+output "private_key_path" {
+  description = "Path to the generated PEM file"
+  value       = local_file.private_key_file.filename
 }

@@ -1,11 +1,12 @@
-output "key_name" {
-  description = "Name of the created AWS Key Pair"
+# -----------------------------------------------------------------------------
+# 4. Outputs
+# -----------------------------------------------------------------------------
+output "keypair_name" {
+  description = "AWS key pair name"
   value       = aws_key_pair.kp.key_name
 }
 
-output "keypair_private_key_path" {
-  description = "Path of the locally saved private key"
+output "private_key_path" {
+  description = "Path to the generated PEM file"
   value       = local_file.private_key_file.filename
 }
-
-
